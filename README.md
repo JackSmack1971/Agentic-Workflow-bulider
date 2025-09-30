@@ -1,32 +1,190 @@
----
-tags: [gradio-custom-component, SimpleTextbox, workflow, builder, editor]
-title: gradio_workflowbuilder
-short_description: workflow builder
-colorFrom: blue
-colorTo: yellow
-sdk: gradio
-pinned: false
-app_file: space.py
----
+# Gradio WorkflowBuilder
 
-# `gradio_workflowbuilder`
-<img alt="Static Badge" src="https://img.shields.io/badge/version%20-%200.0.1%20-%20orange">  
+[![Version](https://img.shields.io/badge/version-0.0.1-orange)](https://pypi.org/project/gradio-workflowbuilder/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue)](https://python.org)
+[![Development Status](https://img.shields.io/badge/status-Alpha-yellow)](https://pypi.org/project/gradio-workflowbuilder/)
 
-workflow builder
+> **Visual workflow builder custom component for Gradio, powered by SvelteFlow**
 
-## Installation
+A professional drag-and-drop workflow builder component that integrates seamlessly with Gradio applications, enabling visual creation and editing of AI workflow diagrams with 25+ specialized node types. [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L9-L11 | Component description from docstring]]
+
+## ✨ Features
+
+- **🎨 Visual Workflow Design** - Drag-and-drop interface with real-time node connections [[EVID: src/frontend/Index.svelte:L1-L15 | Svelte component implements drag-and-drop]]
+- **25+ Node Types** - Specialized nodes for inputs, AI models, data processing, tools, and outputs [[EVID: src/frontend/Index.svelte:L65-L90 | Component categories defined]]
+- **🔄 Bidirectional Sync** - Seamless state management between Python backend and Svelte frontend [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L48-L52 | preprocess method handles frontend-to-backend sync]]
+- **📤 JSON Export** - Export complete workflow configurations for persistence and reuse [[EVID: src/demo/app.py:L6-L10 | export_workflow function]]
+- **🎯 Property Editing** - Edit node properties through collapsible side panels [[EVID: src/frontend/Index.svelte:L35-L38 | Property panel state management]]
+- **🔍 Workflow Validation** - Built-in analyzer for detecting disconnected nodes and structural issues [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L98-L135 | WorkflowAnalyzer class]]
+
+## 🏗️ Architecture
+
+### High-Level System Design
+
+```mermaid
+flowchart TB
+    subgraph Frontend["Frontend Layer (Svelte)"]
+        UI[Index.svelte]
+        Canvas[Visual Canvas]
+        Sidebar[Component Sidebar]
+        Props[Property Panel]
+    end
+    
+    subgraph Backend["Backend Layer (Python)"]
+        Component[WorkflowBuilder Component]
+        Validator[Workflow Validator]
+        Analyzer[WorkflowAnalyzer]
+    end
+    
+    subgraph Data["Data Flow"]
+        Nodes[(Nodes)]
+        Edges[(Edges)]
+        JSON[JSON Export]
+    end
+    
+    UI --> Canvas
+    UI --> Sidebar
+    UI --> Props
+    Canvas --> Nodes
+    Canvas --> Edges
+    Nodes --> Component
+    Edges --> Component
+    Component --> Validator
+    Validator --> Analyzer
+    Component --> JSON
+    
+    style Frontend fill:#e3f2fd
+    style Backend fill:#f3e5f5
+    style Data fill:#fff3e0
+```
+
+### Component Relationship Diagram
+
+```mermaid
+classDiagram
+    class WorkflowBuilder {
+        +Dict value
+        +str label
+        +preprocess(payload) Dict
+        +postprocess(value) Dict
+        +example_payload() Dict
+    }
+    
+    class WorkflowAnalyzer {
+        +analyze_workflow(workflow) Dict
+        -_count_node_types()
+        -_check_disconnected_nodes()
+    }
+    
+    class IndexSvelte {
+        +nodes Array
+        +edges Array
+        +componentCategories Object
+        +handleDragStart()
+        +connectNodes()
+        +updateNodeProperty()
+    }
+    
+    class GradioInterface {
+        +change Event
+        +input Event
+    }
+    
+    WorkflowBuilder --> WorkflowAnalyzer : validates
+    WorkflowBuilder --> GradioInterface : emits
+    IndexSvelte --> WorkflowBuilder : syncs state
+    
+    note for WorkflowBuilder "Python backend component\nHandles validation & events"
+    note for IndexSvelte "Svelte frontend\nVisual workflow canvas"
+```
+
+### Data Processing Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Canvas as Canvas UI
+    participant Frontend as Svelte Frontend
+    participant Backend as Python Backend
+    participant Validator
+    
+    User->>Canvas: Drag node to canvas
+    Canvas->>Frontend: Add node to state
+    Frontend->>Frontend: Update nodes array
+    Frontend->>Backend: Emit change event
+    Backend->>Validator: Validate workflow
+    Validator->>Validator: Check structure
+    Validator-->>Backend: Return validation results
+    Backend->>Frontend: Process & sync state
+    Frontend->>Canvas: Re-render workflow
+    Canvas-->>User: Display updated workflow
+    
+    User->>Canvas: Connect nodes
+    Canvas->>Frontend: Add edge to state
+    Frontend->>Backend: Emit change event
+    Backend->>Validator: Validate connections
+    Validator-->>Backend: Validation results
+    Backend->>Frontend: Update state
+    
+    User->>Canvas: Click "Export"
+    Canvas->>Backend: Request JSON export
+    Backend->>Backend: Serialize workflow
+    Backend-->>User: Return JSON
+```
+
+## 📦 Installation
+
+**Quickstart (Tutorial)**
 
 ```bash
 pip install gradio_workflowbuilder
 ```
 
-## Usage
+[[EVID: README.md:L17-L19 | Installation command from README]]
+
+**Development Mode (How-to)**
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd gradio_workflowbuilder
+
+# Install in editable mode
+pip install -e .
+
+# Install with development dependencies
+pip install -e ".[dev]"
+```
+
+[[EVID: AGENTS.md:L32-L38 | Development installation commands]]
+
+## 🚀 Quick Start
+
+### Basic Usage (Tutorial)
+
+```python
+import gradio as gr
+from gradio_workflowbuilder import WorkflowBuilder
+
+# Create a simple workflow builder interface
+with gr.Blocks() as demo:
+    workflow_builder = WorkflowBuilder(
+        label="🎨 Visual Workflow Designer",
+        info="Drag components to build your workflow"
+    )
+    
+demo.launch()
+```
+
+[[EVID: src/demo/app.py:L1-L3 | Import statements from demo]]
+
+### Complete Example with Export (How-to)
 
 ```python
 import gradio as gr
 from gradio_workflowbuilder import WorkflowBuilder
 import json
-
 
 def export_workflow(workflow_data):
     """Export workflow as formatted JSON"""
@@ -34,333 +192,353 @@ def export_workflow(workflow_data):
         return "No workflow to export"
     return json.dumps(workflow_data, indent=2)
 
-
-# Create the main interface
-with gr.Blocks(
-    title="🎨 Visual Workflow Builder", 
-    theme=gr.themes.Soft(),
-    css="""
-    .main-container { max-width: 1600px; margin: 0 auto; }
-    .workflow-section { margin-bottom: 2rem; }
-    .button-row { display: flex; gap: 1rem; justify-content: center; margin: 1rem 0; }
+with gr.Blocks(title="Workflow Builder") as demo:
+    workflow_builder = WorkflowBuilder(
+        label="🎨 Visual Workflow Designer",
+        info="Drag → Connect → Edit → Export"
+    )
     
-    .component-description {
-        padding: 24px;
-        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        border-radius: 12px;
-        border-left: 4px solid #3b82f6;
-        margin: 16px 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .component-description p {
-        margin: 10px 0;
-        line-height: 1.6;
-        color: #374151;
-    }
-
-    .base-description {
-        font-size: 17px;
-        font-weight: 600;
-        color: #1e293b;
-    }
-
-    .base-description strong {
-        color: #3b82f6;
-        font-weight: 700;
-    }
-
-    .feature-description {
-        font-size: 16px;
-        color: #1e293b;
-        font-weight: 500;
-    }
-
-    .customization-note {
-        font-size: 15px;
-        color: #64748b;
-        font-style: italic;
-    }
-
-    .sample-intro {
-        font-size: 15px;
-        color: #1e293b;
-        font-weight: 600;
-        margin-top: 16px;
-        border-top: 1px solid #e2e8f0;
-        padding-top: 16px;
-    }
-    """
-) as demo:
+    with gr.Row():
+        export_output = gr.Code(
+            language="json",
+            label="Workflow Configuration"
+        )
     
-    with gr.Column(elem_classes=["main-container"]):
-        gr.Markdown("""
-        # 🎨 Visual Workflow Builder
-        
-        **Create sophisticated workflows with drag and drop simplicity.**
-        """)
-        
-        # Simple description section with styling
-        gr.HTML("""
-        <div class="component-description">
-            <p class="base-description">Base custom component powered by <strong>svelteflow</strong>.</p>
-            <p class="feature-description">Create custom workflows.</p>
-            <p class="customization-note">You can customise the nodes as well as the design of the workflow.</p>
-            <p class="sample-intro">Here is a sample:</p>
-        </div>
-        """)
-        
-        # Main workflow builder section
-        with gr.Column(elem_classes=["workflow-section"]):
-            workflow_builder = WorkflowBuilder(
-                label="🎨 Visual Workflow Designer",
-                info="Drag components from the sidebar → Connect nodes by dragging from output (right) to input (left) → Click nodes to edit properties"
-            )
-        
-        # Export section below the workflow
-        gr.Markdown("## 💾 Export Workflow")
-        
-        with gr.Row():
-            with gr.Column():
-                export_output = gr.Code(
-                    language="json", 
-                    label="Workflow Configuration",
-                    lines=10
-                )
-        
-        # Action button
-        with gr.Row(elem_classes=["button-row"]):
-            export_btn = gr.Button("💾 Export JSON", variant="primary", size="lg")
-        
-        # Instructions
-        with gr.Accordion("📖 How to Use", open=False):
-            gr.Markdown("""
-            ### 🚀 Getting Started
-            
-            1. **Add Components**: Drag items from the left sidebar onto the canvas
-            2. **Connect Nodes**: Drag from the blue circle on the right of a node to the left circle of another
-            3. **Edit Properties**: Click any node to see its editable properties on the right panel
-            4. **Organize**: Drag nodes around to create a clean workflow layout
-            5. **Delete**: Use the ✕ button on nodes or click the red circle on connections
-            
-            ### 🎯 Component Types
-            
-            - **📥 Inputs**: Text fields, file uploads, number inputs
-            - **⚙️ Processing**: Language models, text processors, conditionals
-            - **📤 Outputs**: Text displays, file exports, charts
-            - **🔧 Tools**: API calls, data transformers, validators
-            
-            ### 💡 Pro Tips
-            
-            - **Collapsible Panels**: Use the arrow buttons to hide/show sidebars
-            - **Live Updates**: Properties update in real-time as you edit
-            - **Export Options**: Get JSON config for your workflow
-            """)
+    export_btn = gr.Button("💾 Export JSON")
     
-    # Event handlers
+    # Connect export button
     export_btn.click(
         fn=export_workflow,
         inputs=[workflow_builder],
         outputs=[export_output]
     )
 
-
-if __name__ == "__main__":
-    demo.launch(
-        server_name="0.0.0.0",
-        show_error=True
-    )
-
+demo.launch()
 ```
 
-## `WorkflowBuilder`
+[[EVID: src/demo/app.py:L6-L65 | Complete demo implementation]]
 
-### Initialization
+## 📖 Component Reference
 
-<table>
-<thead>
-<tr>
-<th align="left">name</th>
-<th align="left" style="width: 25%;">type</th>
-<th align="left">default</th>
-<th align="left">description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="left"><code>value</code></td>
-<td align="left" style="width: 25%;">
+### WorkflowBuilder Class (Reference)
+
+#### Initialization Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `value` | `Optional[Dict[str, Any]]` | `None` | Default workflow data with nodes and edges [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L19-L20 | Parameter definition]] |
+| `label` | `Optional[str]` | `None` | Component label [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L21 | Parameter definition]] |
+| `info` | `Optional[str]` | `None` | Additional component information |
+| `show_label` | `Optional[bool]` | `None` | Whether to show the label |
+| `container` | `bool` | `True` | Whether to use container styling |
+| `scale` | `Optional[int]` | `None` | Relative width scale |
+| `min_width` | `int` | `160` | Minimum width in pixels [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L26 | Default min_width]] |
+| `visible` | `bool` | `True` | Whether component is visible |
+| `elem_id` | `Optional[str]` | `None` | HTML element ID |
+| `elem_classes` | `Optional[List[str]]` | `None` | CSS classes |
+| `render` | `bool` | `True` | Whether to render immediately |
+
+#### Events (Reference)
+
+- **`change`** - Triggered when workflow value changes (user input OR function update) [[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L15 | EVENTS definition]]
+- **`input`** - Triggered only on user input changes
+
+### Workflow Data Format (Reference)
 
 ```python
-typing.Optional[typing.Dict[str, typing.Any]][
-    typing.Dict[str, typing.Any][str, typing.Any], None
-]
+{
+    "workflow_id": "unique-id",
+    "workflow_name": "My Workflow",
+    "nodes": [
+        {
+            "id": "Node-1",
+            "type": "Input",
+            "position": {"x": 100, "y": 200},
+            "data": {
+                "display_name": "Input Node",
+                "template": {
+                    "field_name": {
+                        "display_name": "Field Label",
+                        "type": "string",
+                        "value": "default value",
+                        "is_handle": true
+                    }
+                }
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e1",
+            "source": "Node-1",
+            "source_handle": "output_field",
+            "target": "Node-2",
+            "target_handle": "input_field"
+        }
+    ]
+}
 ```
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">Default workflow data with nodes and edges</td>
-</tr>
+[[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L62-L94 | example_payload method structure]]
 
-<tr>
-<td align="left"><code>label</code></td>
-<td align="left" style="width: 25%;">
+## 🎯 Node Types (Reference)
+
+The component includes 25+ specialized node types organized into categories: [[EVID: src/frontend/Index.svelte:L65-L90 | componentCategories definition]]
+
+### Input/Output Nodes
+- **ChatInput** 💬 - User message input [[EVID: src/frontend/Index.svelte:L69-L88 | ChatInput definition]]
+- **ChatOutput** 💭 - AI response output
+- **Input** 📥 - Generic data source (string, image, video, audio, file)
+- **Output** 📤 - Generic data sink
+
+### AI Model Nodes
+- **OpenAI** - OpenAI API integration
+- **Anthropic Claude** - Claude model integration
+- **Ollama** - Local model serving
+- **HuggingFace** - HF model inference
+
+### Data Processing Nodes
+- **ExecutePython** 🐍 - Execute Python code [[EVID: src/frontend/Index.svelte:L269-L305 | ExecutePython node definition]]
+- **ConditionalLogic** 🔀 - Branching logic
+- **Wait** ⏳ - Delay execution
+
+### Tools & Utilities
+- **GoogleSearch** 🔍 - Web search integration
+- **FileReader** 📁 - File I/O operations
+- **JSONParser** - JSON manipulation
+
+## 🛠️ Development (How-to)
+
+### Project Structure (Explanation)
+
+```
+src/
+├── backend/
+│   └── gradio_workflowbuilder/
+│       ├── workflowbuilder.py      # Main component class
+│       └── templates/              # Built frontend (auto-generated)
+├── frontend/
+│   ├── Index.svelte               # Main workflow canvas UI
+│   ├── Example.svelte             # Example component
+│   └── package.json               # Frontend dependencies
+├── demo/
+│   ├── app.py                     # Demo application
+│   └── space.py                   # Space launcher
+├── pyproject.toml                 # Python package config
+└── README.md                      # Documentation
+```
+
+[[EVID: AGENTS.md:L20-L30 | Project structure from AGENTS.md]]
+
+### Building the Component (How-to)
+
+**Python Package**
+
+```bash
+# Build distribution
+python -m build
+
+# Or using hatch
+hatch build
+```
+
+[[EVID: AGENTS.md:L50-L55 | Build commands]]
+
+**Frontend Assets**
+
+```bash
+cd frontend
+npm install
+# Gradio's build system handles compilation automatically
+```
+
+[[EVID: AGENTS.md:L41-L48 | Frontend build process]]
+
+### Running the Demo (Tutorial)
+
+```bash
+python space.py
+# Server available at http://localhost:7860
+```
+
+[[EVID: AGENTS.md:L57-L61 | Demo launch command and default port]]
+
+### Making Changes (How-to)
+
+**Frontend Development**
+
+1. Edit files in `frontend/` directory
+2. Gradio automatically rebuilds to `backend/templates/`
+3. Test changes by running `python space.py`
+4. Component hot-reloads during development
+
+[[EVID: AGENTS.md:L158-L163 | Frontend development workflow]]
+
+**Backend Development**
+
+1. Edit `backend/gradio_workflowbuilder/workflowbuilder.py`
+2. Changes take effect immediately in development mode
+3. Test with `python space.py`
+
+[[EVID: AGENTS.md:L165-L168 | Backend development workflow]]
+
+## 🔧 Advanced Usage (How-to)
+
+### Workflow Analysis (How-to)
 
 ```python
-typing.Optional[str][str, None]
+from gradio_workflowbuilder import WorkflowAnalyzer
+
+# Analyze workflow structure
+workflow_data = {
+    "nodes": [...],
+    "edges": [...]
+}
+
+analysis = WorkflowAnalyzer.analyze_workflow(workflow_data)
+
+print(f"Complexity: {analysis['complexity']}")
+print(f"Node types: {analysis['node_types']}")
+print(f"Issues: {analysis['issues']}")
 ```
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">Component label</td>
-</tr>
+[[EVID: src/backend/gradio_workflowbuilder/workflowbuilder.py:L98-L135 | WorkflowAnalyzer implementation]]
 
-<tr>
-<td align="left"><code>info</code></td>
-<td align="left" style="width: 25%;">
+### Custom Node Properties (How-to)
+
+Node templates support various field types:
 
 ```python
-typing.Optional[str][str, None]
+{
+    "template": {
+        "text_field": {
+            "display_name": "Text Input",
+            "type": "string",
+            "value": "default"
+        },
+        "number_field": {
+            "display_name": "Number Input",
+            "type": "number",
+            "value": 42,
+            "min": 0,
+            "max": 100
+        },
+        "choice_field": {
+            "display_name": "Select Option",
+            "type": "options",
+            "options": ["opt1", "opt2"],
+            "value": "opt1"
+        },
+        "connection_point": {
+            "display_name": "Input",
+            "type": "object",
+            "is_handle": true
+        }
+    }
+}
 ```
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">Additional component information</td>
-</tr>
+[[EVID: src/frontend/Index.svelte:L109-L132 | Node template structure]]
 
-<tr>
-<td align="left"><code>show_label</code></td>
-<td align="left" style="width: 25%;">
+## 📋 Requirements (Reference)
 
-```python
-typing.Optional[bool][bool, None]
+### Python Dependencies
+
+- **Python** ≥ 3.10 [[EVID: src/pyproject.toml:L15 | requires-python constraint]]
+- **Gradio** ≥ 4.0, < 6.0 [[EVID: src/pyproject.toml:L19 | gradio dependency]]
+
+### Frontend Dependencies
+
+- **Svelte** ^4.0.0 [[EVID: src/frontend/package.json:L23-L25 | peerDependencies]]
+- **@xyflow/svelte** ^1.0.2 [[EVID: src/frontend/package.json:L13-L17 | core dependencies]]
+- **@gradio/atoms** 0.16.1
+- **@gradio/utils** 0.10.2
+
+### Build System
+
+- **Hatchling** (build backend) [[EVID: src/pyproject.toml:L2-L6 | build-system]]
+- **Node.js** (for frontend development)
+
+## 🧪 Testing
+
+⚠️ **No automated test suite currently exists.** [[EVID: AGENTS.md:L63-L71 | Testing note]]
+
+When adding tests:
+
+```bash
+# Python tests (future)
+pytest backend/
+
+# Frontend tests (future)
+cd frontend && npm test
 ```
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">Whether to show the label</td>
-</tr>
+## 📝 Development Status (Explanation)
 
-<tr>
-<td align="left"><code>container</code></td>
-<td align="left" style="width: 25%;">
+**Current Version:** 0.0.1 (Alpha) [[EVID: src/pyproject.toml:L11 | version field]]
 
-```python
-bool
+**Development Stage:** Alpha - expect API changes [[EVID: AGENTS.md:L203 | Known issues]]
+
+**Known Limitations:**
+- No automated test coverage [[EVID: AGENTS.md:L204 | Known issues]]
+- Author information needs updating for forks [[EVID: AGENTS.md:L205 | Known issues]]
+- Component API may change in future releases
+
+## 🤝 Contributing (How-to)
+
+### Code Style
+
+**Python**
+- Python ≥ 3.10 required
+- Type hints for function signatures
+- Docstrings for classes and public methods
+- Follow PEP 8 conventions
+
+**Frontend**
+- Svelte 4.x with TypeScript
+- camelCase for variables/functions
+- PascalCase for components
+- Reactive declarations with `$:` syntax
+
+[[EVID: AGENTS.md:L74-L90 | Code style guidelines]]
+
+### Git Workflow
+
+**Branch Naming**
+```
+feature/<description>    # New features
+fix/<issue>             # Bug fixes
+docs/<topic>            # Documentation
+refactor/<component>    # Code refactoring
 ```
 
-</td>
-<td align="left"><code>True</code></td>
-<td align="left">Whether to use container styling</td>
-</tr>
-
-<tr>
-<td align="left"><code>scale</code></td>
-<td align="left" style="width: 25%;">
-
-```python
-typing.Optional[int][int, None]
+**Commit Messages** (Conventional Commits)
+```
+feat(scope): Add new feature
+fix(scope): Fix bug
+docs: Update documentation
+refactor: Restructure code
 ```
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">Relative width scale</td>
-</tr>
+[[EVID: AGENTS.md:L172-L195 | Git workflow guidelines]]
 
-<tr>
-<td align="left"><code>min_width</code></td>
-<td align="left" style="width: 25%;">
+## 📄 License
 
-```python
-int
-```
+This project is licensed under the **Apache License 2.0** [[EVID: src/pyproject.toml:L14 | license field]]
 
-</td>
-<td align="left"><code>160</code></td>
-<td align="left">Minimum width in pixels</td>
-</tr>
+## 🔗 Resources
 
-<tr>
-<td align="left"><code>visible</code></td>
-<td align="left" style="width: 25%;">
+- [Gradio Custom Components Guide](https://www.gradio.app/guides/custom-components)
+- [Svelte Documentation](https://svelte.dev/docs)
+- [@xyflow/svelte Documentation](https://svelteflow.dev/)
+- [Python Packaging](https://packaging.python.org/)
 
-```python
-bool
-```
+[[EVID: AGENTS.md:L220-L226 | Additional resources]]
 
-</td>
-<td align="left"><code>True</code></td>
-<td align="left">Whether component is visible</td>
-</tr>
+---
 
-<tr>
-<td align="left"><code>elem_id</code></td>
-<td align="left" style="width: 25%;">
+**Built with** 🐍 Python · 🎨 Svelte · ⚡ Gradio
 
-```python
-typing.Optional[str][str, None]
-```
+**Powered by** [@xyflow/svelte](https://svelteflow.dev/) for visual workflow editing
 
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">HTML element ID</td>
-</tr>
-
-<tr>
-<td align="left"><code>elem_classes</code></td>
-<td align="left" style="width: 25%;">
-
-```python
-typing.Optional[typing.List[str]][
-    typing.List[str][str], None
-]
-```
-
-</td>
-<td align="left"><code>None</code></td>
-<td align="left">CSS classes</td>
-</tr>
-
-<tr>
-<td align="left"><code>render</code></td>
-<td align="left" style="width: 25%;">
-
-```python
-bool
-```
-
-</td>
-<td align="left"><code>True</code></td>
-<td align="left">Whether to render immediately</td>
-</tr>
-</tbody></table>
-
-
-### Events
-
-| name | description |
-|:-----|:------------|
-| `change` | Triggered when the value of the WorkflowBuilder changes either because of user input (e.g. a user types in a textbox) OR because of a function update (e.g. an image receives a value from the output of an event trigger). See `.input()` for a listener that is only triggered by user input. |
-| `input` | This listener is triggered when the user changes the value of the WorkflowBuilder. |
-
-
-
-### User function
-
-The impact on the users predict function varies depending on whether the component is used as an input or output for an event (or both).
-
-- When used as an Input, the component only impacts the input signature of the user function.
-- When used as an output, the component only impacts the return signature of the user function.
-
-The code snippet below is accurate in cases where the component is used as both an input and an output.
-
-
-
- ```python
- def predict(
-     value: typing.Dict[str, typing.Any][str, typing.Any]
- ) -> typing.Dict[str, typing.Any][str, typing.Any]:
-     return value
- ```
- 
+---
